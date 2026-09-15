@@ -1,0 +1,277 @@
+:root {
+  --bg: #1e1e2e;
+  --panel: #27293d;
+  --panel-2: #2f3247;
+  --text: #e6e6ef;
+  --muted: #9a9ab0;
+  --accent: #7c6cf0;
+  --green: #4caf50;
+  --blue: #2196f3;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.app-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.subtitle {
+  color: var(--muted);
+  margin: 6px 0 0;
+}
+
+.layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.board-wrap {
+  position: relative;
+  width: min(560px, 90vw);
+}
+
+.board-wrap .resolve-btn {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  padding: 12px 24px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  transition: transform 0.1s ease;
+}
+
+.board-wrap .resolve-btn:hover {
+  transform: translateX(-50%) scale(1.04);
+}
+
+.sidebar {
+  width: 300px;
+  background: var(--panel);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.status {
+  font-size: 1.05rem;
+}
+
+.hint {
+  display: block;
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+}
+
+.controls button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.controls button:hover:not(:disabled) {
+  background: var(--accent);
+}
+
+.controls button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.history {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+}
+
+.history h2 {
+  margin: 0 0 10px;
+  font-size: 1.1rem;
+}
+
+.history .empty {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 420px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.history-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+}
+
+.move-num {
+  color: var(--muted);
+  min-width: 28px;
+}
+
+.player {
+  min-width: 58px;
+  font-weight: 600;
+}
+
+.player.w {
+  color: #fff;
+}
+
+.player.b {
+  color: #b0b0c8;
+}
+
+.options {
+  display: flex;
+  gap: 6px;
+}
+
+.option {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--muted);
+}
+
+.option.played {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.modal {
+  background: var(--panel);
+  border-radius: 14px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.modal h3 {
+  margin: 0 0 16px;
+}
+
+.promotion-pieces {
+  display: flex;
+  gap: 12px;
+}
+
+.promo-piece {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: var(--panel-2);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.promo-piece:hover {
+  background: var(--accent);
+}
+
+.promo-glyph {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+/* Game over overlay */
+.gameover-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  z-index: 10;
+}
+
+.gameover-card {
+  background: var(--panel);
+  padding: 28px 36px;
+  border-radius: 14px;
+  text-align: center;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.gameover-card h2 {
+  margin: 0 0 16px;
+}
+
+.gameover-card button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+}
