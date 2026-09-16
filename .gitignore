@@ -4,3 +4,5 @@ dist-ssr
 *.local
 *.tsbuildinfo
 .DS_Store
+# Local server config (domain, letsencrypt path, peer key).
+server/.env

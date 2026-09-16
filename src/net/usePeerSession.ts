@@ -8,6 +8,20 @@ import {
   roomPeerId,
   type NetMessage,
 } from './protocol'
+import { getPeerConfig } from './peerConfig'
+
+/** PeerJS errors meaning "signaling server unreachable" (fallback applies). */
+function isBrokerUnreachable(err: unknown): boolean {
+  if (typeof err !== 'object' || err === null || !('type' in err)) return false
+  const t = String((err as { type: unknown }).type)
+  return (
+    t === 'network' ||
+    t === 'server-error' ||
+    t === 'socket-error' ||
+    t === 'socket-closed' ||
+    t === 'ssl-unavailable'
+  )
+}
 
 export type SessionStatus =
   | 'idle'
@@ -83,6 +97,31 @@ export function usePeerSession(): PeerSession {
     peerRef.current = null
   }, [])
 
+  /**
+   * Create a Peer against the configured signaling server:
+   * manual Lobby setting > build-time env > built-in default (dilesoft.ru).
+   * When `fallback` is true, use the PeerJS public cloud instead.
+   */
+  const makePeer = useCallback(
+    (id?: string, fallback = false): Peer => {
+      const cfg = fallback ? undefined : getPeerConfig()
+      if (!cfg) {
+        if (fallback) trace('fallback: PeerJS public cloud broker')
+        return id ? new Peer(id) : new Peer()
+      }
+      trace(`signaling server ${cfg.host}:${cfg.port}${cfg.path} (secure=${cfg.secure})`)
+      const opts = {
+        host: cfg.host,
+        port: cfg.port,
+        path: cfg.path,
+        key: cfg.key,
+        secure: cfg.secure,
+      }
+      return id ? new Peer(id, opts) : new Peer(opts)
+    },
+    [trace],
+  )
+
   const attachConnection = useCallback(
     (conn: DataConnection, host: boolean) => {
       const epoch = epochRef.current
@@ -129,7 +168,7 @@ export function usePeerSession(): PeerSession {
   )
 
   const createRoom = useCallback(
-    (hostColor: Color) => {
+    (hostColor: Color, fallback = false) => {
       cleanup()
       const roomCode = makeRoomCode()
       setCode(roomCode)
@@ -137,7 +176,7 @@ export function usePeerSession(): PeerSession {
       setMyColor(hostColor)
       setError(null)
       setStatus('creating')
-      const peer = new Peer(roomPeerId(roomCode))
+      const peer = makePeer(roomPeerId(roomCode), fallback)
       peerRef.current = peer
       trace(`peer created id=${roomPeerId(roomCode)}`)
       peer.on('open', (id) => {
@@ -158,17 +197,25 @@ export function usePeerSession(): PeerSession {
         ) {
           peer.destroy()
           peerRef.current = null
-          createRoom(hostColor)
+          createRoom(hostColor, fallback)
+          return
+        }
+        // Configured broker unreachable — one retry via public cloud.
+        if (!fallback && isBrokerUnreachable(err)) {
+          trace('configured broker unreachable, retrying via public cloud')
+          peer.destroy()
+          peerRef.current = null
+          createRoom(hostColor, true)
           return
         }
         setFailed(peerErrorMessage(err))
       })
     },
-    [attachConnection, cleanup, setFailed],
+    [attachConnection, cleanup, makePeer, setFailed],
   )
 
   const joinRoom = useCallback(
-    (roomCode: string) => {
+    (roomCode: string, fallback = false) => {
       cleanup()
       const normalized = roomCode.trim().toLowerCase()
       if (!normalized) {
@@ -180,7 +227,7 @@ export function usePeerSession(): PeerSession {
       setMyColor(null)
       setError(null)
       setStatus('joining')
-      const peer = new Peer()
+      const peer = makePeer(undefined, fallback)
       peerRef.current = peer
       trace('guest peer created')
       peer.on('open', (id) => {
@@ -190,11 +237,21 @@ export function usePeerSession(): PeerSession {
       })
       peer.on('disconnected', () => trace('guest peer disconnected from broker'))
       peer.on('error', (err: unknown) => {
+        // Configured broker unreachable — one retry via public cloud.
+        // NOTE: peer-unavailable on the fallback means the room genuinely
+        // doesn't exist there (host is on another broker), so report it.
+        if (!fallback && isBrokerUnreachable(err)) {
+          trace('configured broker unreachable, retrying via public cloud')
+          peer.destroy()
+          peerRef.current = null
+          joinRoom(roomCode, true)
+          return
+        }
         trace(`peer error: ${peerErrorMessage(err)}`)
         setFailed(peerErrorMessage(err))
       })
     },
-    [attachConnection, cleanup, setFailed],
+    [attachConnection, cleanup, makePeer, setFailed],
   )
 
   const leave = useCallback(() => {

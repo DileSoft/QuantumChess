@@ -1,11 +1,18 @@
 import { useState } from 'react'
 import type { Color } from 'chess.js'
 import type { PeerSession } from '../net/usePeerSession'
+import { clearPeerConfig, savePeerConfig } from '../net/peerConfig'
 
 export default function Lobby({ session }: { session: PeerSession }) {
   const { status, code, isHost, error } = session
   const [joinCode, setJoinCode] = useState('')
   const [hostColor, setHostColor] = useState<Color>('w')
+  const [showSrv, setShowSrv] = useState(false)
+  const [srvHost, setSrvHost] = useState('')
+  const [srvPort, setSrvPort] = useState('443')
+  const [srvPath, setSrvPath] = useState('/peerjs')
+  const [srvKey, setSrvKey] = useState('peerjs')
+  const [srvSecure, setSrvSecure] = useState(true)
 
   const shareLink =
     code && typeof window !== 'undefined'
@@ -74,6 +81,76 @@ export default function Lobby({ session }: { session: PeerSession }) {
                 Войти
               </button>
             </div>
+          </div>
+
+          <div className="lobby-section">
+            <h3 onClick={() => setShowSrv((v) => !v)} style={{ cursor: 'pointer' }}>
+              Сервер соединения {showSrv ? '▾' : '▸'}
+            </h3>
+            {showSrv && (
+              <>
+                <p className="hint">
+                  Пустой хост — публичный брокер PeerJS. Свой сервер: хост, порт,
+                  путь и ключ (должны совпадать с server/.env).
+                </p>
+                <div className="lobby-row">
+                  <input
+                    placeholder="Хост (example.com)"
+                    value={srvHost}
+                    onChange={(e) => setSrvHost(e.target.value)}
+                  />
+                </div>
+                <div className="lobby-row">
+                  <input
+                    placeholder="Порт"
+                    value={srvPort}
+                    onChange={(e) => setSrvPort(e.target.value)}
+                  />
+                  <input
+                    placeholder="Путь"
+                    value={srvPath}
+                    onChange={(e) => setSrvPath(e.target.value)}
+                  />
+                </div>
+                <div className="lobby-row">
+                  <input
+                    placeholder="Ключ"
+                    value={srvKey}
+                    onChange={(e) => setSrvKey(e.target.value)}
+                  />
+                  <button
+                    className={srvSecure ? 'active' : ''}
+                    onClick={() => setSrvSecure((v) => !v)}
+                  >
+                    {srvSecure ? '🔒 SSL' : '🔓 без SSL'}
+                  </button>
+                </div>
+                <div className="lobby-row">
+                  <button
+                    onClick={() =>
+                      savePeerConfig({
+                        host: srvHost.trim(),
+                        port: Number(srvPort) || 443,
+                        path: srvPath || '/peerjs',
+                        key: srvKey || 'peerjs',
+                        secure: srvSecure,
+                      })
+                    }
+                  >
+                    Сохранить
+                  </button>
+                  <button
+                    className="secondary"
+                    onClick={() => {
+                      clearPeerConfig()
+                      setSrvHost('')
+                    }}
+                  >
+                    Сбросить
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </>
       ) : (

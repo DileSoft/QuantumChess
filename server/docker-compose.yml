@@ -1,0 +1,42 @@
+services:
+  peerjs:
+    image: peerjs/peerjs-server:latest
+    restart: unless-stopped
+    # CLI-опции PeerServer: порт, путь, ключ и режим за reverse proxy.
+    # Значение PEER_PATH должно совпадать с path в клиенте,
+    # PEER_KEY — с key в клиенте.
+    command: >
+      --port 9000
+      --path ${PEER_PATH:-/peerjs}
+      --key ${PEER_KEY:-peerjs}
+      --proxied true
+    expose:
+      - "9000"
+    networks:
+      - qc-net
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    depends_on:
+      - peerjs
+    ports:
+      - "${HTTP_PORT:-9000}:80"
+      - "${HTTPS_PORT:-9002}:443"
+    volumes:
+      # Entrypoint-скрипт: генерирует конфиг (HTTPS при наличии DOMAIN
+      # и сертификатов, иначе plain HTTP).
+      - ./nginx/entrypoint.sh:/docker-entrypoint.d/99-qc-generate-conf.sh:ro
+      # Сертификаты Let's Encrypt с хоста (только чтение).
+      # Путь на хосте задаётся через LETSENCRYPT_DIR в .env.
+      # Если переменная пустая — монтирование пропускается (см. README).
+      - ${LETSENCRYPT_DIR:-/etc/letsencrypt}:/etc/letsencrypt:ro
+    environment:
+      - DOMAIN=${DOMAIN:-}
+      - PEER_PATH=${PEER_PATH:-/peerjs}
+    networks:
+      - qc-net
+
+networks:
+  qc-net:
+    driver: bridge
