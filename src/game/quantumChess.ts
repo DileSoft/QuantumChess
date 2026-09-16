@@ -37,10 +37,11 @@ export function sameMove(a: Move, b: Move): boolean {
 /**
  * Make a move on a throwaway basis and return the resulting verbose Move
  * (including SAN), without mutating the real game. Throws if illegal.
+ * Accepts SAN (e.g. "Nf3", "e8=Q") or a from/to object.
  */
 export function makeMove(
   chess: Chess,
-  input: { from: string; to: string; promotion?: string },
+  input: string | { from: string; to: string; promotion?: string },
 ): Move {
   const move = chess.move(input)
   chess.undo()

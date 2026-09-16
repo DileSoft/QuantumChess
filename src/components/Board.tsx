@@ -1,14 +1,23 @@
 import { useState } from 'react'
+import type { Color } from 'chess.js'
 import { Chessboard } from 'react-chessboard'
 import type { QuantumChessApi } from '../game/useQuantumChess'
 
 const ARROW_COLORS = ['#4caf50', '#2196f3'] // 1st option green, 2nd option blue
 
-export default function Board({ game }: { game: QuantumChessApi }) {
+export default function Board({
+  game,
+  interactiveColor,
+}: {
+  game: QuantumChessApi
+  /** In net games, only this color's pieces are interactive. Defaults to side to move. */
+  interactiveColor?: Color | null
+}) {
   const { state } = game
   const [clickFrom, setClickFrom] = useState<string | null>(null)
 
-  const canSelect = state.phase === 'selecting'
+  const canSelect = state.phase === 'selecting' && game.isMyTurn
+  const activeColor = interactiveColor ?? state.turn
 
   const arrows = state.selectedMoves.map((m, i) => ({
     startSquare: m.from,
@@ -35,7 +44,7 @@ export default function Board({ game }: { game: QuantumChessApi }) {
   }) {
     if (!canSelect) return
     if (!clickFrom) {
-      if (piece && piece.pieceType[0] === state.turn) {
+      if (piece && piece.pieceType[0] === activeColor) {
         setClickFrom(square)
       }
       return
@@ -65,14 +74,15 @@ export default function Board({ game }: { game: QuantumChessApi }) {
       options={{
         id: 'quantum-board',
         position: state.fen,
-        boardOrientation: 'white',
+        // Flip only in net games (interactiveColor set); hot-seat stays white-bottom.
+        boardOrientation: interactiveColor === 'b' ? 'black' : 'white',
         arrows,
         squareStyles,
         allowDrawingArrows: false,
         onSquareClick,
         onPieceDrop,
         canDragPiece: ({ piece }) =>
-          canSelect && piece.pieceType[0] === state.turn,
+          canSelect && piece.pieceType[0] === activeColor,
       }}
     />
   )

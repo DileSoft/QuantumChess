@@ -11,9 +11,10 @@
   },
   "dependencies": {
     "chess.js": "^1.4.0",
+    "peerjs": "^1.5.5",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-chessboard": "^5.12.1"
+    "react-chessboard": "^5.12.1",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",
